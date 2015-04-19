@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>A Pelican Blog</title><link href="/" rel="alternate"></link><link href="/feeds/all-en.atom.xml" rel="self"></link><id>/</id><updated>2015-04-19T11:05:32+00:00</updated><entry><title>Vagrant搭建LNMP环境</title><link href="/vagrantda-jian-lnmphuan-jing.html" rel="alternate"></link><updated>2015-04-19T11:05:32+00:00</updated><author><name></name></author><id>tag:,2015-04-19:vagrantda-jian-lnmphuan-jing.html</id><summary type="html">&lt;p&gt;安装Vagrant和Virtualbox. 这个不多说, 安装完成两个软件后, 在一个空闲的硬盘分区中&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;mkdir ubuntu_lnmp
+vagrant init ubuntu/trusty64
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;打开vagrantfile打开这两个配置&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;config.vm.network &amp;quot;private_network&amp;quot;, ip: “192.168.10.10&amp;quot;
+
+config.vm.provider &amp;quot;virtualbox&amp;quot; do |vb|
+  # Display the VirtualBox GUI when booting the machine
+  # vb.gui = true
+
+  # Customize the amount of memory on the VM:
+  vb.memory = &amp;quot;1024&amp;quot;
+end
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;vagrant up等待安装
+vagrant ssh的连接用户名和密码都是vagrant&lt;/p&gt;
+&lt;p&gt;vagrant环境搞定&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo apt-get update
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;安装nginx&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo apt-get install nginx
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;安装Mysql请设置密码, 在远程连接时候, 可以使用SSH方式连接, ssh的用户名和密码都是vagrant&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo apt-get install mysql-server  mysql-client  libmysqlclient-dev
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;安装Git版本控制&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo apt-get git
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;安装PHP以及相关模块&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo apt-get install php5-fpm php5-mysql php5-cli php5-gd php5-memcache php5-memcached php5-json php5-mcrypt php5-curl php-pear build-essential php5-dev -y
+sudo pecl install xdebug -y
+sudo php5enmod json
+sudo php5enmod mcrypt
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;删除/usr/share/nginx/html&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo ln -s /vagrant /usr/share/nginx/html
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;注意: 这里的 /vagrant 目录其实就是你之前创建的 ubuntu_lnmp 目录, 你在本地修改 ubuntu_lnmp 虚拟机中 /vagrant 目录也会同步&lt;/p&gt;
+&lt;p&gt;修改/etc/php5/fpm/php.ini&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;cgi.fix_pathinfo = 1
+display_errors = On
+date.timezone = PRC
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;/etc/nginx/sites-available/default
+修改&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nt"&gt;server&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="o"&gt;...&lt;/span&gt;
+    &lt;span class="o"&gt;//&lt;/span&gt;&lt;span class="err"&gt;找到&lt;/span&gt;&lt;span class="n"&gt;index&lt;/span&gt;
+    &lt;span class="n"&gt;index&lt;/span&gt; &lt;span class="n"&gt;index&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;php&lt;/span&gt; &lt;span class="n"&gt;index&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;html&lt;/span&gt; &lt;span class="n"&gt;index&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;htm&lt;/span&gt;
+
+    &lt;span class="o"&gt;...&lt;/span&gt;
+    &lt;span class="n"&gt;location&lt;/span&gt; &lt;span class="o"&gt;~&lt;/span&gt; &lt;span class="err"&gt;\&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;php&lt;/span&gt; &lt;span class="err"&gt;{&lt;/span&gt;
+        &lt;span class="err"&gt;#&lt;/span&gt;       &lt;span class="n"&gt;fastcgi_split_path_info&lt;/span&gt; &lt;span class="o"&gt;^&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;.+&lt;/span&gt;&lt;span class="err"&gt;\&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;php&lt;/span&gt;&lt;span class="p"&gt;)(&lt;/span&gt;&lt;span class="o"&gt;/.+&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="err"&gt;$&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="err"&gt;#&lt;/span&gt;       &lt;span class="err"&gt;#&lt;/span&gt; &lt;span class="n"&gt;NOTE&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;You&lt;/span&gt; &lt;span class="n"&gt;should&lt;/span&gt; &lt;span class="n"&gt;have&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;cgi.fix_pathinfo = 0;&amp;quot;&lt;/span&gt; &lt;span class="n"&gt;in&lt;/span&gt; &lt;span class="n"&gt;php&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ini&lt;/span&gt;
+        &lt;span class="err"&gt;#&lt;/span&gt;
+        &lt;span class="err"&gt;#&lt;/span&gt;       &lt;span class="err"&gt;#&lt;/span&gt; &lt;span class="n"&gt;With&lt;/span&gt; &lt;span class="n"&gt;php5&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;cgi&lt;/span&gt; &lt;span class="n"&gt;alone&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;fastcgi_pass&lt;/span&gt; &lt;span class="m"&gt;127&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="m"&gt;1&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="m"&gt;9000&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="err"&gt;#&lt;/span&gt;       &lt;span class="err"&gt;#&lt;/span&gt; &lt;span class="n"&gt;With&lt;/span&gt; &lt;span class="n"&gt;php5&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;fpm&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
+        &lt;span class="err"&gt;#&lt;/span&gt;       &lt;span class="n"&gt;fastcgi_pass&lt;/span&gt; &lt;span class="n"&gt;unix&lt;/span&gt;&lt;span class="o"&gt;:/&lt;/span&gt;&lt;span class="n"&gt;var&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;run&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;php5&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;fpm&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sock&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+                &lt;span class="n"&gt;fastcgi_index&lt;/span&gt; &lt;span class="n"&gt;index&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;php&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+                &lt;span class="n"&gt;include&lt;/span&gt; &lt;span class="n"&gt;fastcgi_params&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+                &lt;span class="n"&gt;set&lt;/span&gt; &lt;span class="err"&gt;$&lt;/span&gt;&lt;span class="n"&gt;path_info&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+                &lt;span class="n"&gt;set&lt;/span&gt; &lt;span class="err"&gt;$&lt;/span&gt;&lt;span class="n"&gt;real_script_name&lt;/span&gt; &lt;span class="err"&gt;$&lt;/span&gt;&lt;span class="n"&gt;fastcgi_script_name&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+                &lt;span class="n"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="err"&gt;$&lt;/span&gt;&lt;span class="n"&gt;fastcgi_script_name&lt;/span&gt; &lt;span class="o"&gt;~&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;^(.+?\.php)(/.+)$&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="err"&gt;{&lt;/span&gt;
+                    &lt;span class="n"&gt;set&lt;/span&gt; &lt;span class="err"&gt;$&lt;/span&gt;&lt;span class="n"&gt;real_script_name&lt;/span&gt; &lt;span class="err"&gt;$&lt;/span&gt;&lt;span class="m"&gt;1&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+                    &lt;span class="n"&gt;set&lt;/span&gt; &lt;span class="err"&gt;$&lt;/span&gt;&lt;span class="n"&gt;path_info&lt;/span&gt; &lt;span class="err"&gt;$&lt;/span&gt;&lt;span class="m"&gt;2&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+                &lt;span class="p"&gt;}&lt;/span&gt;
+                &lt;span class="nt"&gt;fastcgi_param&lt;/span&gt; &lt;span class="nt"&gt;SCRIPT_FILENAME&lt;/span&gt; &lt;span class="o"&gt;$&lt;/span&gt;&lt;span class="nt"&gt;document_root&lt;/span&gt;&lt;span class="o"&gt;$&lt;/span&gt;&lt;span class="nt"&gt;real_script_name&lt;/span&gt;&lt;span class="o"&gt;;&lt;/span&gt;
+                &lt;span class="nt"&gt;fastcgi_param&lt;/span&gt; &lt;span class="nt"&gt;SCRIPT_NAME&lt;/span&gt; &lt;span class="o"&gt;$&lt;/span&gt;&lt;span class="nt"&gt;real_script_name&lt;/span&gt;&lt;span class="o"&gt;;&lt;/span&gt;
+                &lt;span class="nt"&gt;fastcgi_param&lt;/span&gt; &lt;span class="nt"&gt;PATH_INFO&lt;/span&gt; &lt;span class="o"&gt;$&lt;/span&gt;&lt;span class="nt"&gt;path_info&lt;/span&gt;&lt;span class="o"&gt;;&lt;/span&gt;
+    &lt;span class="err"&gt;}&lt;/span&gt;
+&lt;span class="err"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;这样是为了支持PHP的PHPINFO. 其实不是很难理解, fastcgi_param 配置项名称会出现在$_SERVER[配置项名称]中&lt;/p&gt;
+&lt;p&gt;修改nginx的用户名称&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo vi /etc/nginx/nginx.conf
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;找到user www-data; 改为 user vagrant;&lt;/p&gt;
+&lt;p&gt;修改配置php-fpm配置&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo vi /etc/php5/fpm/pool.d/www.conf
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;找到以下配置项目修改&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;user = vagrant
+group = vagrant
+
+;listen = /var/run/php5-fpm.sock 注释掉 改为
+listen = 127.0.0.1:9000
+
+listen.owner = vagrant
+listen.group = vagrant
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;我的pm.相关配置&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;pm.max_children = 1000
+pm.start_servers = 25
+pm.min_spare_servers = 25
+pm.max_spare_servers = 50
+pm.max_requests = 1000
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;为了防止cli和fpm的php.ini不相同, 可以讲cli的php.ini文件删除, 然后ln过去一个&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;sudo cp /etc/php5/fpm/php.ini /etc/php5/cli/php.ini
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;这样修改一个配置文件, 就可以达到两边同步了.&lt;/p&gt;</summary></entry></feed>
