@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <title>Vagrant搭建LNMP环境</title>
+        <link rel="stylesheet" href="http://summer.github.io/theme/css/main.css" />
+
+        <!--[if IE]>
+            <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+</head>
+
+<body id="index" class="home">
+<!--  -->
+        <header id="banner" class="body">
+                <h1><a href="http://summer.github.io/">夏天博客 </a></h1>
+                <nav><ul>
+                    <li><a href="/index.html">主页</a></li>
+                    <li><a href="/categories.html">分类</a></li>
+                    <li><a href="/archives.html">归档</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="http://summer.github.io/posts/2015/04/19/vagrantda-jian-lnmphuan-jing.html" rel="bookmark"
+           title="Permalink to Vagrant搭建LNMP环境">Vagrant搭建LNMP环境</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2015-04-19T11:05:32+08:00">
+                发布于: 2015年04月19日
+        </abbr>
+
+        <address class="vcard author">
+                作者:                         <a class="url fn" href="http://summer.github.io/author/summerxia-tian.html">Summer.夏天</a>
+        </address>
+<p>分类: <a href="http://summer.github.io/category/server.html">Server</a>.</p>
+
+</footer><!-- /.post-info -->      <p>安装Vagrant和Virtualbox. 这个不多说, 安装完成两个软件后, 在一个空闲的硬盘分区中</p>
+<div class="highlight"><pre>mkdir ubuntu_lnmp
+vagrant init ubuntu/trusty64
+</pre></div>
+
+
+<p>打开vagrantfile打开这两个配置</p>
+<div class="highlight"><pre>config.vm.network &quot;private_network&quot;, ip: “192.168.10.10&quot;
+
+config.vm.provider &quot;virtualbox&quot; do |vb|
+  # Display the VirtualBox GUI when booting the machine
+  # vb.gui = true
+
+  # Customize the amount of memory on the VM:
+  vb.memory = &quot;1024&quot;
+end
+</pre></div>
+
+
+<p>vagrant up等待安装
+vagrant ssh的连接用户名和密码都是vagrant</p>
+<p>vagrant环境搞定</p>
+<div class="highlight"><pre>sudo apt-get update
+</pre></div>
+
+
+<p>安装nginx</p>
+<div class="highlight"><pre>sudo apt-get install nginx
+</pre></div>
+
+
+<p>安装Mysql请设置密码, 在远程连接时候, 可以使用SSH方式连接, ssh的用户名和密码都是vagrant</p>
+<div class="highlight"><pre>sudo apt-get install mysql-server  mysql-client  libmysqlclient-dev
+</pre></div>
+
+
+<p>安装Git版本控制</p>
+<div class="highlight"><pre>sudo apt-get git
+</pre></div>
+
+
+<p>安装PHP以及相关模块</p>
+<div class="highlight"><pre>sudo apt-get install php5-fpm php5-mysql php5-cli php5-gd php5-memcache php5-memcached php5-json php5-mcrypt php5-curl php-pear build-essential php5-dev -y
+sudo pecl install xdebug -y
+sudo php5enmod json
+sudo php5enmod mcrypt
+</pre></div>
+
+
+<p>删除/usr/share/nginx/html</p>
+<div class="highlight"><pre>sudo ln -s /vagrant /usr/share/nginx/html
+</pre></div>
+
+
+<p>注意: 这里的 /vagrant 目录其实就是你之前创建的 ubuntu_lnmp 目录, 你在本地修改 ubuntu_lnmp 虚拟机中 /vagrant 目录也会同步</p>
+<p>修改/etc/php5/fpm/php.ini</p>
+<div class="highlight"><pre>cgi.fix_pathinfo = 1
+display_errors = On
+date.timezone = PRC
+</pre></div>
+
+
+<p>/etc/nginx/sites-available/default
+修改</p>
+<div class="highlight"><pre><span class="nt">server</span> <span class="p">{</span>
+    <span class="o">...</span>
+    <span class="o">//</span><span class="err">找到</span><span class="n">index</span>
+    <span class="n">index</span> <span class="n">index</span><span class="o">.</span><span class="n">php</span> <span class="n">index</span><span class="o">.</span><span class="n">html</span> <span class="n">index</span><span class="o">.</span><span class="n">htm</span>
+
+    <span class="o">...</span>
+    <span class="n">location</span> <span class="o">~</span> <span class="err">\</span><span class="o">.</span><span class="n">php</span> <span class="err">{</span>
+        <span class="err">#</span>       <span class="n">fastcgi_split_path_info</span> <span class="o">^</span><span class="p">(</span><span class="o">.+</span><span class="err">\</span><span class="o">.</span><span class="n">php</span><span class="p">)(</span><span class="o">/.+</span><span class="p">)</span><span class="err">$</span><span class="p">;</span>
+        <span class="err">#</span>       <span class="err">#</span> <span class="n">NOTE</span><span class="o">:</span> <span class="n">You</span> <span class="n">should</span> <span class="n">have</span> <span class="s2">&quot;cgi.fix_pathinfo = 0;&quot;</span> <span class="n">in</span> <span class="n">php</span><span class="o">.</span><span class="n">ini</span>
+        <span class="err">#</span>
+        <span class="err">#</span>       <span class="err">#</span> <span class="n">With</span> <span class="n">php5</span><span class="o">-</span><span class="n">cgi</span> <span class="n">alone</span><span class="o">:</span>
+                <span class="n">fastcgi_pass</span> <span class="m">127</span><span class="o">.</span><span class="m">0</span><span class="o">.</span><span class="m">0</span><span class="o">.</span><span class="m">1</span><span class="o">:</span><span class="m">9000</span><span class="p">;</span>
+        <span class="err">#</span>       <span class="err">#</span> <span class="n">With</span> <span class="n">php5</span><span class="o">-</span><span class="n">fpm</span><span class="o">:</span>
+        <span class="err">#</span>       <span class="n">fastcgi_pass</span> <span class="n">unix</span><span class="o">:/</span><span class="n">var</span><span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">php5</span><span class="o">-</span><span class="n">fpm</span><span class="o">.</span><span class="n">sock</span><span class="p">;</span>
+                <span class="n">fastcgi_index</span> <span class="n">index</span><span class="o">.</span><span class="n">php</span><span class="p">;</span>
+                <span class="n">include</span> <span class="n">fastcgi_params</span><span class="p">;</span>
+                <span class="n">set</span> <span class="err">$</span><span class="n">path_info</span> <span class="s2">&quot;&quot;</span><span class="p">;</span>
+                <span class="n">set</span> <span class="err">$</span><span class="n">real_script_name</span> <span class="err">$</span><span class="n">fastcgi_script_name</span><span class="p">;</span>
+                <span class="n">if</span> <span class="p">(</span><span class="err">$</span><span class="n">fastcgi_script_name</span> <span class="o">~</span> <span class="s2">&quot;^(.+?\.php)(/.+)$&quot;</span><span class="p">)</span> <span class="err">{</span>
+                    <span class="n">set</span> <span class="err">$</span><span class="n">real_script_name</span> <span class="err">$</span><span class="m">1</span><span class="p">;</span>
+                    <span class="n">set</span> <span class="err">$</span><span class="n">path_info</span> <span class="err">$</span><span class="m">2</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="nt">fastcgi_param</span> <span class="nt">SCRIPT_FILENAME</span> <span class="o">$</span><span class="nt">document_root</span><span class="o">$</span><span class="nt">real_script_name</span><span class="o">;</span>
+                <span class="nt">fastcgi_param</span> <span class="nt">SCRIPT_NAME</span> <span class="o">$</span><span class="nt">real_script_name</span><span class="o">;</span>
+                <span class="nt">fastcgi_param</span> <span class="nt">PATH_INFO</span> <span class="o">$</span><span class="nt">path_info</span><span class="o">;</span>
+    <span class="err">}</span>
+<span class="err">}</span>
+</pre></div>
+
+
+<p>这样是为了支持PHP的PHPINFO. 其实不是很难理解, fastcgi_param 配置项名称会出现在$_SERVER[配置项名称]中</p>
+<p>修改nginx的用户名称</p>
+<div class="highlight"><pre>sudo vi /etc/nginx/nginx.conf
+</pre></div>
+
+
+<p>找到user www-data; 改为 user vagrant;</p>
+<p>修改配置php-fpm配置</p>
+<div class="highlight"><pre>sudo vi /etc/php5/fpm/pool.d/www.conf
+</pre></div>
+
+
+<p>找到以下配置项目修改</p>
+<div class="highlight"><pre>user = vagrant
+group = vagrant
+
+;listen = /var/run/php5-fpm.sock 注释掉 改为
+listen = 127.0.0.1:9000
+
+listen.owner = vagrant
+listen.group = vagrant
+</pre></div>
+
+
+<p>我的pm.相关配置</p>
+<div class="highlight"><pre>pm.max_children = 1000
+pm.start_servers = 25
+pm.min_spare_servers = 25
+pm.max_spare_servers = 50
+pm.max_requests = 1000
+</pre></div>
+
+
+<p>为了防止cli和fpm的php.ini不相同, 可以讲cli的php.ini文件删除, 然后ln过去一个</p>
+<div class="highlight"><pre>sudo cp /etc/php5/fpm/php.ini /etc/php5/cli/php.ini
+</pre></div>
+
+
+<p>这样修改一个配置文件, 就可以达到两边同步了.</p>
+    </div><!-- /.entry-content -->
+    <div class="comments">
+      <h2>评论</h2>
+      <div id="disqus_thread"></div>
+      <script type="text/javascript">
+        var disqus_shortname = 'alexskywin';
+        var disqus_identifier = 'posts/2015/04/19/vagrantda-jian-lnmphuan-jing.html';
+        var disqus_url = 'http://summer.github.io/posts/2015/04/19/vagrantda-jian-lnmphuan-jing.html';
+        (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//alexskywin.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+      <noscript>Please enable JavaScript to view the comments.</noscript>
+    </div>
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="blogroll">
+                        <h2>博客链接</h2>
+                        <ul>
+                            <li><a href="http://getpelican.com/">Pelican</a></li>
+                            <li><a href="http://python.org/">Python.org</a></li>
+                            <li><a href="http://jinja.pocoo.org/">Jinja2</a></li>
+                        </ul>
+                </div><!-- /.blogroll -->
+                <div class="social">
+                        <h2>友情连接</h2>
+                        <ul>
+
+                            <li><a href="http://www.163.com" target="_blank">网易</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                驱动于 <a href="http://getpelican.com/">Pelican</a>, 使用 <a href="http://python.org">Python</a>.
+                </address><!-- /#about -->
+
+                <p>模版提供者: <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, 感谢!</p>
+        </footer><!-- /#contentinfo -->
+
+<script type="text/javascript">
+    var disqus_shortname = 'alexskywin';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+</body>
+</html>
